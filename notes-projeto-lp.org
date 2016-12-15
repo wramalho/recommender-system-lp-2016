@@ -1,3 +1,6 @@
+#+TITLE: Sistema de Recomendação em Racket
+#+AUTHOR: Waldo Ramalho
+
 * Introdução
 
 
