@@ -10,6 +10,7 @@
 #+END_QUOTE
 
 
+
 #+BEGIN_QUOTE
 
 "People think that computer science is the art of geniuses but the actual reality is the opposite, just many people doing things that build on eachother, like a wall of mini stones."
@@ -50,9 +51,190 @@ Usuários (aquele que se relaciona com os items), items (os objetos das recomend
 
 O sistema de recomendação que iremos implementar, apresentado no PCI, é de filtragem colaborativa baseado nos usuários. Algoritmos de filtragem colaborativa costumam procurar um certo número de usuários e, a partir destes, identificar um conjunto menor /C/ com preferências similares às do usuário /x/. Ele vai operar sobre os items bem avaliados do conjunto /C/ e combiná-los para criar uma lista hierárquica de sugestões para o usuário /x/. 
 
-O primeiro desafio deste tipo de sistema é como representar diferentes usuários e suas preferências. No PCI, a estrutura de dados escolhida foi os /nested dictionaries/, a qual, no Racket, uma escolha natural seriam as /(nested) hash-tables/. Por sua vez, o código de Rcihard Cook utilizou as /association lists/ (utilizar fonte beautiful racket).
+O primeiro desafio deste tipo de sistema é como representar diferentes usuários e suas preferências. No PCI, a estrutura de dados escolhida foi os /nested dictionaries/, a qual, no Racket, uma escolha natural seriam as /(nested) hash-tables/. Por sua vez, o código de Richard Cook utilizou as /association lists/ (utilizar fonte beautiful racket).
 
 O segundo desafio é determinar como os usuários são similares entre si a partir de suas preferências. A ideia é comparar cada usuário com cada outro usuário, computando uma espécie de ranking ou /score/ de similaridade. Este, por sua vez, pode ser implementado a partir de diversas métricas: distância eucidiana, correlação de Pearson, similaridade jacquartiana, coseno dos ângulos entre os vetores de preferência dos usuários etc. A utilidade deste /score/ de similaridade é que pode ser utilizado em um procedimento para hierarquizar os usuários do conjunto /C/ em relação ao usuário /x/.
+
+** Código do Programming Collective Intelligence
+
+#+BEGIN_SRC python
+
+# A dictionary of movie critics and their ratings of a small
+# set of movies
+critics={'Lisa Rose': {'Lady in the Water': 2.5, 'Snakes on a Plane': 3.5,
+'Just My Luck': 3.0, 'Superman Returns': 3.5, 'You, Me and Dupree': 2.5,
+'The Night Listener': 3.0},
+'Gene Seymour': {'Lady in the Water': 3.0, 'Snakes on a Plane': 3.5,
+'Just My Luck': 1.5, 'Superman Returns': 5.0, 'The Night Listener': 3.0,
+'You, Me and Dupree': 3.5},
+'Michael Phillips': {'Lady in the Water': 2.5, 'Snakes on a Plane': 3.0,
+'Superman Returns': 3.5, 'The Night Listener': 4.0},
+'Claudia Puig': {'Snakes on a Plane': 3.5, 'Just My Luck': 3.0,
+'The Night Listener': 4.5, 'Superman Returns': 4.0,
+'You, Me and Dupree': 2.5},
+'Mick LaSalle': {'Lady in the Water': 3.0, 'Snakes on a Plane': 4.0,
+'Just My Luck': 2.0, 'Superman Returns': 3.0, 'The Night Listener': 3.0,
+'You, Me and Dupree': 2.0},
+'Jack Matthews': {'Lady in the Water': 3.0, 'Snakes on a Plane': 4.0,
+'The Night Listener': 3.0, 'Superman Returns': 5.0, 'You, Me and Dupree': 3.5},
+'Toby': {'Snakes on a Plane':4.5,'You, Me and Dupree':1.0,'Superman Returns':4.0}}
+
+from math import sqrt
+# Returns a distance-based similarity score for person1 and person2
+def sim_distance(prefs,person1,person2):
+# Get the list of shared_items
+si={}
+for item in prefs[person1]:
+if item in prefs[person2]:
+si[item]=1
+# if they have no ratings in common, return 0
+if len(si)==0: return 0
+# Add up the squares of all the differences
+sum_of_squares=sum([pow(prefs[person1][item]-prefs[person2][item],2)
+for item in prefs[person1] if item in prefs[person2]])
+
+# Returns the Pearson correlation coefficient for p1 and p2
+def sim_pearson(prefs,p1,p2):
+# Get the list of mutually rated items
+si={}
+for item in prefs[p1]:
+if item in prefs[p2]: si[item]=1
+# Find the number of elements
+n=len(si)
+# if they are no ratings in common, return 0
+if n==0: return 0
+# Add up all the preferences
+sum1=sum([prefs[p1][it] for it in si])
+sum2=sum([prefs[p2][it] for it in si])
+# Sum up the squares
+sum1Sq=sum([pow(prefs[p1][it],2) for it in si])
+sum2Sq=sum([pow(prefs[p2][it],2) for it in si])
+# Sum up the products
+pSum=sum([prefs[p1][it]*prefs[p2][it] for it in si])
+# Calculate Pearson score
+num=pSum-(sum1*sum2/n)
+den=sqrt((sum1Sq-pow(sum1,2)/n)*(sum2Sq-pow(sum2,2)/n))
+if den==0: return 0
+r=num/den
+
+# Returns the best matches for person from the prefs dictionary.
+# Number of results and similarity function are optional params.
+def topMatches(prefs,person,n=5,similarity=sim_pearson):
+scores=[(similarity(prefs,person,other),other)
+for other in prefs if other!=person]
+# Sort the list so the highest scores appear at the top
+scores.sort( )
+scores.reverse( )
+return scores[0:n]
+
+# Gets recommendations for a person by using a weighted average
+# of every other user's rankings
+def getRecommendations(prefs,person,similarity=sim_pearson):
+totals={}
+simSums={}
+for other in prefs:
+# don't compare me to myself
+if other==person: continue
+sim=similarity(prefs,person,other)
+# ignore scores of zero or lower
+if sim<=0: continue
+for item in prefs[other]:
+# only score movies I haven't seen yet
+if item not in prefs[person] or prefs[person][item]==0:
+# Similarity * Score
+totals.setdefault(item,0)
+totals[item]+=prefs[other][item]*sim
+# Sum of similarities
+simSums.setdefault(item,0)
+simSums[item]+=sim
+# Create the normalized list
+rankings=[(total/simSums[item],item) for item,total in totals.items( )]
+# Return the sorted list
+rankings.sort( )
+rankings.reverse( )
+return rankings
+
+
+
+#+END_SRC
+
+** Código de Richard Cook
+
+#+BEGIN_SRC commonlisp
+
+
+(defparameter *RECOMMENDATIONS* 
+  '(
+    ("Lisa Rose" . (("Lady in the Water" . 2.5) ("Snakes on a Plane" . 3.5) ("Just My Luck" . 3.0) 
+                    ("Superman Returns" . 3.5) ("You, Me and Dupree" . 2.5) ("The Night Listener" . 3.0)))
+    ("Gene Seymour" . (("Lady in the Water" . 3.0) ("Snakes on a Plane" . 3.5) ("Just My Luck" . 1.5) 
+                       ("Superman Returns" . 5.0) ("The Night Listener" . 3.0) ("You, Me and Dupree" . 3.5)))
+    ("Michael Phillips" . (("Lady in the Water" . 2.5) ("Snakes on a Plane" . 3.0) 
+                           ("Superman Returns" . 3.5) ("The Night Listener" . 4.0)))
+    ("Claudia Puig" . (("Snakes on a Plane" . 3.5) ("Just My Luck" . 3.0) ("The Night Listener" . 4.5) 
+                       ("Superman Returns" . 4.0) ("You, Me and Dupree" . 2.5)))
+    ("Mick LaSalle" . (("Lady in the Water" . 3.0) ("Snakes on a Plane" . 4.0) ("Just My Luck" . 2.0) 
+                       ("Superman Returns" . 3.0) ("The Night Listener" . 3.0) ("You, Me and Dupree" . 2.0)))
+    ("Jack Matthews" . (("Lady in the Water" . 3.0) ("Snakes on a Plane" . 4.0) ("The Night Listener" . 3.0) 
+                        ("Superman Returns" . 5.0) ("You, Me and Dupree" . 3.5)))
+    ("Toby" . (("Snakes on a Plane" . 4.5) ("You, Me and Dupree" . 1.0) 
+               ("Superman Returns" . 4.0)))))
+
+
+(defun critics (reviewer &optional movie)
+  (labels ((get-movie (ms m)
+             (cdr (assoc m ms :test #'equalp))))
+    (let ((movies (cdr (assoc reviewer *RECOMMENDATIONS* :test #'equalp))))
+      (if movie (get-movie movies movie) movies))))
+
+(defun similar (person1 person2 distance)
+  (let* ((movies1 (critics person1))
+         (movies2 (critics person2))
+         (common-movies (mapcar #'car (intersection movies1 movies2 
+                                                    :test #'(lambda (x y) (equalp (car x) (car y)))))))
+    (if (null common-movies)
+        nil
+        (funcall distance person1 person2 common-movies))))
+
+(defun euclidean-distance (person1 person2 common-movies)
+  (let* ((sum-of-squares (reduce #'+ (mapcar 
+                                      #'(lambda (cm) 
+                                          (expt (- (critics person1 cm) (critics person2 cm)) 2)) 
+                                      common-movies)))
+         (distance (/ 1 (1+ sum-of-squares))))
+    distance))
+
+(defun sim-distance (person1 person2)
+  (similar person1 person2 #'euclidean-distance))
+
+
+(defun pearson-distance (person1 person2 common-movies)
+  (let* ((n (length common-movies))
+         (scores1 (mapcar #'(lambda (x) (critics person1 x)) common-movies))
+         (scores2 (mapcar #'(lambda (x) (critics person2 x)) common-movies))
+         (sum1 (reduce #'+ scores1))
+         (sum2 (reduce #'+ scores2))
+         (sum1-sq (reduce #'+ (mapcar #'(lambda (x) (* x x)) scores1)))
+         (sum2-sq (reduce #'+ (mapcar #'(lambda (x) (* x x)) scores2)))
+         (psum (reduce #'+ (mapcar #'* scores1 scores2)))
+         (num (- psum (/ (* sum1 sum2) n)))
+         (den (sqrt (* (- sum1-sq (/ (expt sum1 2) n)) (- sum2-sq (/ (expt sum2 2) n))))))
+    (if (zerop den) 0 (/ num den))))
+
+(defun sim-pearson (person1 person2)
+  (similar person1 person2 #'pearson-distance))
+         
+(defun top-matches (person &optional (n 5) (similarity #'sim-pearson))
+  (let* ((scores (mapcar #'(lambda (x) (cons (funcall similarity person x) x)) 
+                         (remove-if #'(lambda (x) (equalp x person)) (mapcar #'car *RECOMMENDATIONS*))))
+         (sorted-scores (sort scores #'> :key #'car))
+         (len (length sorted-scores)))
+    (if (<= len n)
+        sorted-scores
+        (butlast sorted-scores (- len n)))))
+
+
+#+END_SRC
 
 
 
