@@ -50,10 +50,15 @@ Os mecanismos de um sistema de recomendação são diversos, podendo ser classif
 Usuários (aquele que se relaciona com os items), items (os objetos das recomendações), avaliações (as preferências dos usuários em relação aos items) e as próprias recomendações são os "objetos" ou conceitos pertinentes à um sistema de recomendação típico. 
 
 O sistema de recomendação que iremos implementar, apresentado no PCI, é de filtragem colaborativa baseado nos usuários. Algoritmos de filtragem colaborativa costumam procurar um certo número de usuários e, a partir destes, identificar um conjunto menor /C/ com preferências similares às do usuário /x/. Ele vai operar sobre os items bem avaliados do conjunto /C/ e combiná-los para criar uma lista hierárquica de sugestões para o usuário /x/. 
-
+_
 O primeiro desafio deste tipo de sistema é como representar diferentes usuários e suas preferências. No PCI, a estrutura de dados escolhida foi os /nested dictionaries/, a qual, no Racket, uma escolha natural seriam as /(nested) hash-tables/. Por sua vez, o código de Richard Cook utilizou as /association lists/ (utilizar fonte beautiful racket).
 
 O segundo desafio é determinar como os usuários são similares entre si a partir de suas preferências. A ideia é comparar cada usuário com cada outro usuário, computando uma espécie de ranking ou /score/ de similaridade. Este, por sua vez, pode ser implementado a partir de diversas métricas: distância eucidiana, correlação de Pearson, similaridade jacquartiana, coseno dos ângulos entre os vetores de preferência dos usuários etc. A utilidade deste /score/ de similaridade é que pode ser utilizado em um procedimento para hierarquizar os usuários do conjunto /C/ em relação ao usuário /x/.
+
+
+#+CAPTION: Exemplo de listas associativas do Beautiful Racket
+[[./assoc_lists.png]]
+
 
 
 ** As diferentes implementações
