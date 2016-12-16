@@ -124,8 +124,6 @@
 (define ideal '( ("user1" . (("A" . 1.0) ("B" . 3.0) ("C" . 4.5)))
                  ("user2" . (("A" . 3.0) ("B" . 2.5) ("C" . 5.0)))))
 
-;(define (stripper lst)
- ; (
 
 ; devolve sugestões pro usuário (snippet para parte final)
 ; (format "~a, recomendo que você visite a praia ~a! Bom passeio (:" username recommendation-output)

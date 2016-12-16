@@ -60,6 +60,8 @@ O segundo desafio é determinar como os usuários são similares entre si a part
 
 *** Código do Programming Collective Intelligence
 
+Note-se que o dataset de preferências de usuários (o /nested dictionary/ =critics=) é "/hard-coded/" dentro do próprio código.
+
 #+BEGIN_SRC python
 
 # A dictionary of movie critics and their ratings of a small
@@ -163,7 +165,9 @@ return rankings
 
 *** Código de Richard Cook
 
-#+BEGIN_SRC commonlisp
+Note-se que o código está incompleto em relação ao PCI. Assim como este, o dataset de preferências dos usuários é "/hard-coded/" dentro do próprio código.
+
+#+BEGIN_SRC lisp
 
 
 (defparameter *RECOMMENDATIONS* 
@@ -243,7 +247,6 @@ return rankings
 
 #+BEGIN_SRC racket
 
-#lang racket
 
 #lang racket
 
@@ -371,8 +374,7 @@ return rankings
 (define ideal '( ("user1" . (("A" . 1.0) ("B" . 3.0) ("C" . 4.5)))
                  ("user2" . (("A" . 3.0) ("B" . 2.5) ("C" . 5.0)))))
 
-;(define (stripper lst)
- ; (
+
 
 ; devolve sugestões pro usuário (snippet para parte final)
 ; (format "~a, recomendo que você visite a praia ~a! Bom passeio (:" username recommendation-output)
