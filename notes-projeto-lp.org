@@ -67,7 +67,7 @@ Como eu quero que o meu código possa lidar com diferentes datasets, implementei
 
 Obtive um dataset em .csv a partir de um questionário no Google Forms distribuído entre alguns alunos da FGV sobre quais são as as melhores praias no Rio de Janeiro (o sistema, portanto, coleta os dados dos usuários de modo explícito). Outra preocupação foi que o sistema seja capaz de lidar com dados esparsos, ou seja, preferências incompletas dos usuários em relação a quantidade total de items.
 
-O questionário obteve 23 respostas, cada uma deles avaliando (de '1' a '5') 17 praias do Rio de Janeiro, com a opção "Nunca fui a esta praia".
+O questionário obteve 23 respostas, cada uma delas avaliando (de '1' a '5') 17 praias do Rio de Janeiro, com a opção "Nunca fui a esta praia".
 
 
 ** As diferentes implementações
