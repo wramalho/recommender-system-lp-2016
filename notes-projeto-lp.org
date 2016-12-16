@@ -1,6 +1,18 @@
 #+TITLE: Sistema de Recomendação em Racket
 #+AUTHOR: Waldo Ramalho
 
+#+BEGIN_QUOTE
+
+"And he was like, "No, no, I really think we ought to do that." And I was like, "We don't have time!" So he wrote it that night."
+Peter Seibel
+#+END_QUOTE
+
+#+BEGIN_QUOTE
+
+"People think that computer science is the art of geniuses but the actual reality is the opposite, just many people doing things that build on eachother, like a wall of mini stones."
+Donald Knuth
+#+END_QUOTE
+
 * Introdução
 
 
@@ -26,6 +38,18 @@ O código teve três critérios em seu desenvolvimento:
 
 * O sistema de recomendação
 
+Sistemas de recomendação são ubíquos nas tecnologias de informação e comunicação dos últimos vinte anos. Ainda que quando não presentes, o conceito é um trampolim intuitivo para algoritmos e sistemas mais complexos.
+
+Os mecanismos de um sistema de recomendação são diversos, podendo ser classificados em três tipos principais: filtragem colaborativa, baseados no conteúdo e por modelagem de fatores latentes (citation). Cada tipo apresenta vantagens e desvantagens em termos de eficiência computacional, exigência quanto à quantidade ou completude dos dados e quanto à qualidade das recomendações apresentadas aos usuários. Em uma aplicação real, é usual a combinação de diferentes tipos de sistemas (citation).
+
+Usuários (aquele que se relaciona com os items), items (os objetos das recomendações), avaliações (as preferências dos usuários em relação aos items) e as próprias recomendações são os "objetos" ou conceitos pertinentes à um sistema de recomendação típico. 
+
+O sistema de recomendação que iremos implementar, apresentado no PCI, é de filtragem colaborativa baseado nos usuários. Algoritmos de filtragem colaborativa costumam procurar um certo número de usuários e, a partir destes, identificar um conjunto menor /C/ com preferências similares às do usuário /x/. Ele vai operar sobre os items bem avaliados do conjunto /C/ e combiná-los para criar uma lista hierárquica de sugestões para o usuário /x/. 
+
+O primeiro desafio deste tipo de sistema é como representar diferentes usuários e suas preferências. No PCI, a estrutura de dados escolhida foi os /nested dictionaries/, a qual, no Racket, uma escolha natural seriam as /(nested) hash-tables/. Por sua vez, o código de Rcihard Cook utilizou as /association lists/ (utilizar fonte beautiful racket).
+
+O segundo desafio é determinar como os usuários são similares entre si a partir de suas preferências. A ideia é comparar cada usuário com cada outro usuário, computando uma espécie de ranking ou /score/ de similaridade. Este, por sua vez, pode ser implementado a partir de diversas métricas: distância eucidiana, correlação de Pearson, similaridade jacquartiana, coseno dos ângulos entre os vetores de preferência dos usuários etc. A utilidade deste /score/ de similaridade é que pode ser utilizado em um procedimento para hierarquizar os usuários do conjunto /C/ em relação ao usuário /x/.
+
 
 
 * Sobre os dados
@@ -38,6 +62,13 @@ Como eu quero que o meu código possa lidar com diferentes datasets, implementei
 Ponderei algumas opções de estrutura de dados: hash-table, vectors, structs e listas associativas. A última me pareceu a melhor opção, pois vectors tornavam mais complicado acessar as preferências dos diferentes usuários e structs e hash-tables traziam funcionalidades que não seriam utilizadas. 
 
 
+
+
+Explicit Data Gathering: o dataset vai ser obtido por meio de um questionário aos alunos
+
+Dataset: 
+1. Pode ser esparso (nem todos os usuários avaliaram todos os produtos)
+
 * Possíveis melhorias e desenvolvimentos
 
 * Conclusão
@@ -49,29 +80,23 @@ Ponderei algumas opções de estrutura de dados: hash-table, vectors, structs e 
   
 ** Fontes
 
-Programming Collective Intelligence, capítulo 2
+
+Cook, Richard.'Programming Collective Intelligence' in Common Lisp, Chapter 2. in: *I Need Closures* (blog). Disponível em: <http://i-need-closures.blogspot.com.br/>.
 
 Isinkayer, F.O.; Folajimi, Y.O.; Ojokoh, B.A. "Recommendation Systems: Principles, methods and evaluation" in: *Egyptian Informatics Journal 16 (261-273)*. Cairo: Elsevier, 2015.
 
-Puglisi, Silvia; Parra-Arnau, Javier; Forné, Jordi; Rebollo-Monedero, David. "On content-based recommendation and user privacy in social-tagging systems" in: *Computer Standards & Interfaces 41 (17-27)*. Barcelona: Elsevier, 2015.
-
-Lecture notes "Recommendation Systems" de Jeff Ullman para o MOOC "Mining Massive Datasets". Disponível em: <http://infolab.stanford.edu/~ullman/mmds/ch9.pdf>.
+Quora Feed sobre Recommender Systems. Disponível em: <https://www.quora.com/topic/Recommender-Systems-1>.
 
 Ridwan, Mahmud. "Predicting Likes: Inside A Simple Recommendation Engine's Algorithms". Disponível em: <https://www.toptal.com/algorithms/predicting-likes-inside-a-simple-recommendation-engine>.
 
-Quora Feed sobre Recommender Systems. Disponível em: <https://www.quora.com/topic/Recommender-Systems-1>.
+Segaran, Toby. *Programming Collective Intelligence:* Building Smart Web 2.0 Applications. Cambridge: O'Reilly, 2016.
 
-** Issues
+Lecture notes "Recommendation Systems" de Jeff Ullman para o MOOC "Mining Massive Datasets". Disponível em: <http://infolab.stanford.edu/~ullman/mmds/ch9.pdf>.
 
-Robustness – When users can participate in the recommender system, the issue of fraud must be addressed.
 
-** 
 
-Explicit Data Gathering: o dataset vai ser obtido por meio de um questionário aos alunos
 
-Dataset: 
-1. Pode ser esparso (nem todos os usuários avaliaram todos os produtos)
-
+*** processar e inserir no texto
 
 Sistema de Rec:
 1. Pode ser 1) baseado no conteúdo, 2) colaborativo ou 3) modelagem de fatores latentes
@@ -84,15 +109,3 @@ Precisa de uma métrica de similaridade entre os conjuntos de preferências dos 
 
 Opções para a métrica: similaridade jacquartiana, coseno do ângulo entre rA e rB (problema, trata pref. vazias como 0 (sol. normalização das prefs por meio da subtração destas prefs pela média do row)); c a norm. ainda permite a distinção entre "preferências de alta confiança" e as demais. Outra opção: utilizar o conjunto de usuários k que também avaliarem o item i e, a partir daí, fazer recomendação para x (técnica da vizinhança). 
 
-
-
-* Notes PCI
-
-1. Usar as preferências de um grupo de pessoas para fazer recomendações a outro grupo de pessoas
-2. Noção de items, usuários, avaliações e recomendações
-3. Algoritmos de filtragem colaborativa costumam procurar um grande número de pessoas e encontrar um conjunto menor com preferências similares às do usuário x. Ele vai olhar para outros items que eles gostam e combiná-los para criar uma lista hierárquica de sugestões.
-4. O primeiro desafio é como representar diferentes pessoas e suas preferências (em python, usa-se nested dictionaries; suponho que em racket o jeito natural seja [nested] hash-tables)
-5. O segundo desafio é determinar como as pessoas são similares quanto às suas preferências. A ideia é comparar cada pessoa com cada outra pessoa, calculando um similarity score (há vários modos de se fazer isso: ver notas das lectures acima e mais dois outros métodos: distância euclidiana e correlação de Pearson)
-6. O similarity score pode ser utilizado em uma função que hierarquiza os demais users em relação ao user x
-7. Score os items por meio de um score ponderado (similarity do user y em relação ao user x * avaliação de y sobre item w)
-8. A técnica acima se chama 'user-based collaborative filtering'
