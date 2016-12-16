@@ -57,6 +57,7 @@ O segundo desafio é determinar como os usuários são similares entre si a part
 
 
 #+CAPTION: Exemplo de listas associativas do Beautiful Racket
+#+NAME: fig:fig1
 [[./assoc_lists.png]]
 
 
