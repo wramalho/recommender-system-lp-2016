@@ -4,13 +4,15 @@
 #+BEGIN_QUOTE
 
 "And he was like, "No, no, I really think we ought to do that." And I was like, "We don't have time!" So he wrote it that night."
-Peter Seibel
+(Peter Seibel)
+
 #+END_QUOTE
 
 #+BEGIN_QUOTE
 
 "People think that computer science is the art of geniuses but the actual reality is the opposite, just many people doing things that build on eachother, like a wall of mini stones."
-Donald Knuth
+
+(Donald Knuth)
 #+END_QUOTE
 
 * Introdução
@@ -87,11 +89,11 @@ Isinkayer, F.O.; Folajimi, Y.O.; Ojokoh, B.A. "Recommendation Systems: Principle
 
 Quora Feed sobre Recommender Systems. Disponível em: <https://www.quora.com/topic/Recommender-Systems-1>.
 
-Ridwan, Mahmud. "Predicting Likes: Inside A Simple Recommendation Engine's Algorithms". Disponível em: <https://www.toptal.com/algorithms/predicting-likes-inside-a-simple-recommendation-engine>.
+Ridwan, Mahmud. *Predicting Likes:* Inside A Simple Recommendation Engine's Algorithms. Disponível em: <https://www.toptal.com/algorithms/predicting-likes-inside-a-simple-recommendation-engine>.
 
 Segaran, Toby. *Programming Collective Intelligence:* Building Smart Web 2.0 Applications. Cambridge: O'Reilly, 2016.
 
-Lecture notes "Recommendation Systems" de Jeff Ullman para o MOOC "Mining Massive Datasets". Disponível em: <http://infolab.stanford.edu/~ullman/mmds/ch9.pdf>.
+Ullman, Jeff. *Lecture Notes on Recommendation Systems (Mining Massive Datasets*. Disponível em: <http://infolab.stanford.edu/~ullman/mmds/ch9.pdf>.
 
 
 
