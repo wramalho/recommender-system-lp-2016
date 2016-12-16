@@ -55,11 +55,19 @@ O primeiro desafio deste tipo de sistema é como representar diferentes usuário
 
 O segundo desafio é determinar como os usuários são similares entre si a partir de suas preferências. A ideia é comparar cada usuário com cada outro usuário, computando uma espécie de ranking ou /score/ de similaridade. Este, por sua vez, pode ser implementado a partir de diversas métricas: distância eucidiana, correlação de Pearson, similaridade jacquartiana, coseno dos ângulos entre os vetores de preferência dos usuários etc. A utilidade deste /score/ de similaridade é que pode ser utilizado em um procedimento para hierarquizar os usuários do conjunto /C/ em relação ao usuário /x/.
 
+Por fim, o sistema deve garantir uma ou mais recomendações ao usuário /x/.
 
-#+CAPTION: Exemplo de listas associativas do Beautiful Racket
-#+NAME: fig:fig1
-[[./assoc_lists.png]]
 
+
+** Sobre os dados coletados 
+
+Tanto o código do PCI quanto o código de Richard Cook recebem datasets de recomendações pré-determinados no próprio código.
+
+Como eu quero que o meu código possa lidar com diferentes datasets, implementei-o de modo a ler os dados em um arquivo .csv e organizá-lo em uma lista associativa.
+
+Obtive um dataset em .csv a partir de um questionário no Google Forms distribuído entre alguns alunos da FGV sobre quais são as as melhores praias no Rio de Janeiro (o sistema, portanto, coleta os dados dos usuários de modo explícito). Outra preocupação foi que o sistema seja capaz de lidar com dados esparsos, ou seja, preferências incompletas dos usuários em relação a quantidade total de items.
+
+O questionário obteve 23 respostas, cada uma deles avaliando (de '1' a '5') 17 praias do Rio de Janeiro, com a opção "Nunca fui a esta praia".
 
 
 ** As diferentes implementações
@@ -251,6 +259,16 @@ Note-se que o código está incompleto em relação ao PCI. Assim como este, o d
 
 *** O meu sistema de recomendação
 
+
+#+CAPTION: Exemplo de listas associativas do Beautiful Racket
+#+NAME: fig:fig1
+[[./assoc_lists.png]]
+
+
+Ponderei algumas opções de estrutura de dados: hash-table, vectors, structs e listas associativas. A última me pareceu a melhor opção, pois traz uma flexibilidade interessante, ao permitir que seja manipulada como listas ou como dicionários. 
+
+
+
 #+BEGIN_SRC racket
 
 
@@ -423,7 +441,7 @@ recomendações que o usuário x já conhece e apresenta a melhor recomendação
 ; nomes para facilitar a apresentação do trabalho
 (define teste-userx '(("A" . "4.2") ("B" . "3") ("C" . "1")))
 (define praias-waldo
-  '(("Botafogo" . "3") ("Flamengo" . "2") ("Copacabana" . "3") ("Ipanema" . "4") ("Urca" . "3") ("Praia Vermelha" . "3")))
+  '(("Botafogo" . "3") ("Flamengo" . "2") ("Copacabana" . "3") ("Ipanema" . "4") ("Urca" . "3") ("Praia Vermelha" . "3") ("Arpoador" . 3)))
 
 
 ; variável para exemplificar a estrutura de dados perseguida; funcionalidade de testes
@@ -454,33 +472,9 @@ recomendações que o usuário x já conhece e apresenta a melhor recomendação
 #+END_SRC
 
 
-* Sobre os dados
-
-Tanto o código do PCI quanto o código de Richard Cook recebem datasets de recomendações pré-determinados e já estruturados:
-
-Como eu quero que o meu código possa lidar com diferentes datasets, implementei-o de modo a ler os dados em um arquivo .csv e organizá-lo em uma lista associativa (link):
 
 
-Ponderei algumas opções de estrutura de dados: hash-table, vectors, structs e listas associativas. A última me pareceu a melhor opção, pois vectors tornavam mais complicado acessar as preferências dos diferentes usuários e structs e hash-tables traziam funcionalidades que não seriam utilizadas. 
-
-
-
-
-Explicit Data Gathering: o dataset vai ser obtido por meio de um questionário aos alunos
-
-Dataset: 
-1. Pode ser esparso (nem todos os usuários avaliaram todos os produtos)
-
-* Possíveis melhorias e desenvolvimentos
-
-* Conclusão
-  
-
---------------------
-
-* Planning
-  
-** Fontes
+* Fontes principais
 
 
 Cook, Richard.'Programming Collective Intelligence' in Common Lisp, Chapter 2. in: *I Need Closures* (blog). Disponível em: <http://i-need-closures.blogspot.com.br/>.
@@ -498,16 +492,5 @@ Ullman, Jeff. *Lecture Notes on Recommendation Systems (Mining Massive Datasets*
 
 
 
-*** processar e inserir no texto
 
-Sistema de Rec:
-1. Pode ser 1) baseado no conteúdo, 2) colaborativo ou 3) modelagem de fatores latentes
-
-1) Recomendar items ao usuário X similares aos itens que o usuário X avaliou positivamente anteriormente. Vantagens: a) não precisa de dados de outros usuários, b) é útil para usuários com preferências peculiares, c) items impopulares ou novos não são prejudicados pelo sistema. Desvantagens: a) dificuldade em se criar as características apropriadas aos items e às preferências, b) pouca diversidade nas recomendações; c) "cold-start" para os novos usuários.
-
-2)
-
-Precisa de uma métrica de similaridade entre os conjuntos de preferências dos usuários; Capture a intuição de hierarquia de similaridades (e.g. sim(A,C) > sim (A, B)); Saiba lidar com vetores de preferências desiguais;
-
-Opções para a métrica: similaridade jacquartiana, coseno do ângulo entre rA e rB (problema, trata pref. vazias como 0 (sol. normalização das prefs por meio da subtração destas prefs pela média do row)); c a norm. ainda permite a distinção entre "preferências de alta confiança" e as demais. Outra opção: utilizar o conjunto de usuários k que também avaliarem o item i e, a partir daí, fazer recomendação para x (técnica da vizinhança). 
 
