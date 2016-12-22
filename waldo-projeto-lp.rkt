@@ -67,8 +67,7 @@
 
 ;procedure de critério de similaridade; correlação de pearson
 (define (pearson-correlation avaliador1 avaliador2 items-em-comum)
-  (let* (
-         (n (length items-em-comum))
+  (let* ((n (length items-em-comum))
          (scores1 (map string->number (map (lambda (x) (avaliação avaliador1 x)) items-em-comum)))
          (scores2 (map string->number (map (lambda (x) (avaliação avaliador2 x)) items-em-comum)))
          (soma1 (reduce + scores1))
@@ -87,8 +86,7 @@
 
   (define (avg* lst) (/ (apply + (filter-not zero? lst)) (length (filter-not zero? lst))))
     
-  (let* (
-         (data1 (filter number? (map string->number (flatten (cdr (assoc avaliador1 data))))))
+  (let* ((data1 (filter number? (map string->number (flatten (cdr (assoc avaliador1 data))))))
          (data2 (filter number? (map string->number (flatten (cdr (assoc avaliador2 data))))))
          (vector-1-norm (map (lambda (x)(- x (avg* data1))) (filter-not zero? data1)))
          (vector-2-norm (map (lambda (x)(- x (avg* data2))) (filter-not zero? data2))))
@@ -113,8 +111,7 @@
 
 ;calcula as similaridades de todos os usuários em relação ao usuário x
 (define (top-matches userx [n 25] [similarity sim-pearson] [dataset data])
-  (let* (
-         (scores (map (lambda (x) (cons (similarity userx x) x))
+  (let* ((scores (map (lambda (x) (cons (similarity userx x) x))
                       (filter-not (lambda (x) (equal? x userx)) (map car dataset))))
          (scores-organizados (sort scores > #:key car))
          (len (length scores-organizados)))
@@ -165,22 +162,31 @@ recomendações que o usuário x já conhece e apresenta a melhor recomendação
     (format "Olá! Aproveite as férias e conheça (a praia d@) ~a"(caar (sort-dicts (hash->list recomendação-final)))))
   (recomendação-única (sum-all-scores)))
    
-         
+
+
+
+
+
+
+
+
+
 ; nomes para facilitar a apresentação do trabalho
 (define teste-userx '(("A" . "4.2") ("B" . "3") ("C" . "1")))
-(define praias-waldo
-  '(("Botafogo" . "3") ("Flamengo" . "2") ("Copacabana" . "3") ("Ipanema" . "4") ("Urca" . "3") ("Praia Vermelha" . "3")))
+(define praias-waldo '(("Botafogo" . "3") ("Flamengo" . "2") ("Copacabana" . "3") ("Ipanema" . "4") ("Urca" . "3") ("Praia Vermelha" . "3") ("Arpoador" . 3)))
+
+
+
 
 
 ; variável para exemplificar a estrutura de dados perseguida; funcionalidade de testes
-(define ideal '( ("user1" . (("A" . 1.0) ("B" . 3.0) ("C" . 4.5)))
-                 ("user2" . (("A" . 3.0) ("B" . 2.5) ("C" . 5.0)))))
+(define ideal '(("user1" . (("A" . 1.0) ("B" . 3.0) ("C" . 4.5)))
+                ("user2" . (("A" . 3.0) ("B" . 2.5) ("C" . 5.0)))))
 
 ; outra variável como acima
 
 (define movie-critics 
-  '(
-    ("Lisa Rose" . (("Lady in the Water" . 2.5) ("Snakes on a Plane" . 3.5) ("Just My Luck" . 3.0) 
+  '(("Lisa Rose" . (("Lady in the Water" . 2.5) ("Snakes on a Plane" . 3.5) ("Just My Luck" . 3.0) 
                                                 ("Superman Returns" . 3.5) ("You, Me and Dupree" . 2.5) ("The Night Listener" . 3.0)))
     ("Gene Seymour" . (("Lady in the Water" . 3.0) ("Snakes on a Plane" . 3.5) ("Just My Luck" . 1.5) 
                                                    ("Superman Returns" . 5.0) ("The Night Listener" . 3.0) ("You, Me and Dupree" . 3.5)))

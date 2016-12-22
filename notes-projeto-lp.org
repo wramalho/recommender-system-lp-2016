@@ -260,12 +260,20 @@ Note-se que o código está incompleto em relação ao PCI. Assim como este, o d
 *** O meu sistema de recomendação
 
 
+
+
+Ponderei algumas opções de estrutura de dados: hash-table, vectors, structs e listas associativas. A última me pareceu a melhor opção, pois traz uma flexibilidade interessante, ao permitir que seja manipulada como listas ou como dicionários. 
+
+
+
 #+CAPTION: Exemplo de listas associativas do Beautiful Racket
 #+NAME: fig:fig1
 [[./assoc_lists.png]]
 
 
-Ponderei algumas opções de estrutura de dados: hash-table, vectors, structs e listas associativas. A última me pareceu a melhor opção, pois traz uma flexibilidade interessante, ao permitir que seja manipulada como listas ou como dicionários. 
+
+
+
 
 
 
@@ -470,6 +478,15 @@ recomendações que o usuário x já conhece e apresenta a melhor recomendação
 
 
 #+END_SRC
+
+
+
+* Instruções para uso
+
+1. Clone o repositório em sua máquina
+2. Certifique-se que o /path/ da variável =my-beaches= está de acordo com a localização do arquivo praias.csv em sua máquina
+3. Use a função =get-recommendations= no REPL do seguinte modo: =(get-recommendations praias-waldo)=
+4. A variável praias-waldo pode ser substituída por qualquer lista associativa com as preferências do usuário,
 
 
 
