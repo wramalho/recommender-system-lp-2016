@@ -27,7 +27,7 @@ O que é tão cativante nisto? É que todos os dados são, de certa forma, de pl
 
 Este trabalho é uma tentativa de implementar em Racket um sistema de recomendação, originalmente implementado em Python no segundo capítulo do /Programming Collective Intelligence/ (PCI). Ele foi tornado possível a partir do trabalho de muitos: lectures do curso Mining Massive Datasets dos professores Rajaraman e Ullman, de Stanford, a implementação parcial do PCI do blog /I Need Closures/ de Richard Cook, um paper sobre sistemas de recomendação e, literalmente, centenas de perguntas e respostas no StackOverflow, Reddit e Quora.
 
-O trabalho é estruturado da seguinte forma: (I) explicar os objetivos que pretendo alcançar no desenvolvimento deste código; (II) apresentar os dados empíricos que foram coletados para desafiar a robustez do código que, em sua implementação original, trabalha com dados hipotéticos e limitados; (III) apresentar o código, explicando seu funcionamento e comentando algumas escolhas de seu design.
+O trabalho é estruturado da seguinte forma: (I) explicar os objetivos que pretendo alcançar no desenvolvimento deste código; (II) apresentar os dados empíricos que foram coletados para desafiar a robustez do código que, em sua implementação original, trabalha com dados hipotéticos e limitados; (III) apresentar o código, explicando seu funcionamento e comentando algumas escolhas de seu design; e (IV) apontar melhorias e desenvolvimentos possíveis.
 
 
 * Objetivos
@@ -36,7 +36,7 @@ O código teve três critérios em seu desenvolvimento:
 
 1. Buscar robustez. No PCI e no código de Richard Cook, o sistema de recomedação toma como input um conjunto de preferências limitado no próprio código (através de um dicionário, no PCI, e de uma lista associativa, em Cook). Considerei que isto era insuficiente, e optei por tentar melhorar o programa ao permitir que ele lidasse com diferentes datasets e, preferencialmente, com dados empíricos;
 
-2. Beleza. Acredito que a beleza de um código é uma boa medida, embora não única e, talvez, a mais importante, de sua qualidade. Busquei programar neste sentido, ao evitar o uso de estados, funções e estruturas de dados que não fossem estritamente necessárias para o sistema de recomendações (exceto quando importantes para sua escalabilidade), escrever um código legível tanto em seus comentários quanto na escolha dos nomes e quantidades de parâmetros e procedimentos, seguir o recomendado pelas práticas de estilo em Racket, entre outras abordagens. No entanto, entendo que a beleza é o que mais falta a este trabalho, em uma autocrítica, fruto de minha inexperiência.
+2. Manter o código simples e legível. Acredito que a beleza de um código é uma boa medida, embora não única, de sua qualidade. Busquei programar neste sentido, ao evitar o uso de estados, funções e estruturas de dados que não fossem estritamente necessárias para o sistema de recomendações (exceto quando importantes para sua escalabilidade). Também busquei escrever um código legível tanto em seus comentários quanto na escolha dos nomes e quantidades de parâmetros e procedimentos, seguindo o recomendado pelas práticas de estilo em Racket, entre outras abordagens. No entanto, em uma autocrítica, entendo que a beleza é o que mais falta a este trabalho, fruto de minha inexperiência.
 
 3. Modularização e abstração. Busquei trazer os ensinamentos dos capítulos 2 e 3 do /Structure and Interpretation of Computer Programs/ ao código. Um programa modular e com uso de abstrações é mais escalável e mais elegante.
 
@@ -458,7 +458,7 @@ Note-se que o código está incompleto em relação ao PCI. Assim como este, o d
 
 ; acesso linha a linha de arquivo. obs: está preparada apenas para um arquivo específico; funcionalidade de teste 
 (define next-row
-  (make-csv-to-recommender-reader (open-input-file my-file)))
+ (make-csv-to-recommender-reader (open-input-file my-file)))
 
 ; transforma a lista produto do arquivo .csv em uma lista associativa
 (define (csv-to-assoc-list filename)
@@ -509,8 +509,7 @@ Note-se que o código está incompleto em relação ao PCI. Assim como este, o d
 
 ;procedure de critério de similaridade; correlação de pearson
 (define (pearson-correlation avaliador1 avaliador2 items-em-comum)
-  (let* (
-         (n (length items-em-comum))
+  (let* ((n (length items-em-comum))
          (scores1 (map string->number (map (lambda (x) (avaliação avaliador1 x)) items-em-comum)))
          (scores2 (map string->number (map (lambda (x) (avaliação avaliador2 x)) items-em-comum)))
          (soma1 (reduce + scores1))
@@ -529,8 +528,7 @@ Note-se que o código está incompleto em relação ao PCI. Assim como este, o d
 
   (define (avg* lst) (/ (apply + (filter-not zero? lst)) (length (filter-not zero? lst))))
     
-  (let* (
-         (data1 (filter number? (map string->number (flatten (cdr (assoc avaliador1 data))))))
+  (let* ((data1 (filter number? (map string->number (flatten (cdr (assoc avaliador1 data))))))
          (data2 (filter number? (map string->number (flatten (cdr (assoc avaliador2 data))))))
          (vector-1-norm (map (lambda (x)(- x (avg* data1))) (filter-not zero? data1)))
          (vector-2-norm (map (lambda (x)(- x (avg* data2))) (filter-not zero? data2))))
@@ -555,8 +553,7 @@ Note-se que o código está incompleto em relação ao PCI. Assim como este, o d
 
 ;calcula as similaridades de todos os usuários em relação ao usuário x
 (define (top-matches userx [n 25] [similarity sim-pearson] [dataset data])
-  (let* (
-         (scores (map (lambda (x) (cons (similarity userx x) x))
+  (let* ((scores (map (lambda (x) (cons (similarity userx x) x))
                       (filter-not (lambda (x) (equal? x userx)) (map car dataset))))
          (scores-organizados (sort scores > #:key car))
          (len (length scores-organizados)))
@@ -621,8 +618,7 @@ recomendações que o usuário x já conhece e apresenta a melhor recomendação
 ; outra variável como acima
 
 (define movie-critics 
-  '(
-    ("Lisa Rose" . (("Lady in the Water" . 2.5) ("Snakes on a Plane" . 3.5) ("Just My Luck" . 3.0) 
+  '(("Lisa Rose" . (("Lady in the Water" . 2.5) ("Snakes on a Plane" . 3.5) ("Just My Luck" . 3.0) 
                                                 ("Superman Returns" . 3.5) ("You, Me and Dupree" . 2.5) ("The Night Listener" . 3.0)))
     ("Gene Seymour" . (("Lady in the Water" . 3.0) ("Snakes on a Plane" . 3.5) ("Just My Luck" . 1.5) 
                                                    ("Superman Returns" . 5.0) ("The Night Listener" . 3.0) ("You, Me and Dupree" . 3.5)))
@@ -634,8 +630,7 @@ recomendações que o usuário x já conhece e apresenta a melhor recomendação
                                                    ("Superman Returns" . 3.0) ("The Night Listener" . 3.0) ("You, Me and Dupree" . 2.0)))
     ("Jack Matthews" . (("Lady in the Water" . 3.0) ("Snakes on a Plane" . 4.0) ("The Night Listener" . 3.0) 
                                                     ("Superman Returns" . 5.0) ("You, Me and Dupree" . 3.5)))
-    ("Toby" . (("Snakes on a Plane" . 4.5) ("You, Me and Dupree" . 1.0) 
-                                           ("Superman Returns" . 4.0)))))
+    ("Toby" . (("Snakes on a Plane" . 4.5) ("You, Me and Dupree" . 1.0) ("Superman Returns" . 4.0)))))
 
 
 
