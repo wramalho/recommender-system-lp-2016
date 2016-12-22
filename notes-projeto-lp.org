@@ -45,17 +45,17 @@ O código teve três critérios em seu desenvolvimento:
 
 Sistemas de recomendação são ubíquos nas tecnologias de informação e comunicação dos últimos vinte anos. Ainda que quando não presentes, o conceito é um trampolim intuitivo para algoritmos e sistemas mais complexos.
 
-Os mecanismos de um sistema de recomendação são diversos, podendo ser classificados em três tipos principais: filtragem colaborativa, baseados no conteúdo e por modelagem de fatores latentes (citation). Cada tipo apresenta vantagens e desvantagens em termos de eficiência computacional, exigência quanto à quantidade ou completude dos dados e quanto à qualidade das recomendações apresentadas aos usuários. Em uma aplicação real, é usual a combinação de diferentes tipos de sistemas (citation).
+Os mecanismos de um sistema de recomendação são diversos, podendo ser classificados em três tipos principais: filtragem colaborativa, baseados no conteúdo e por modelagem de fatores latentes (Isinkayer, 2015). Cada tipo apresenta vantagens e desvantagens em termos de eficiência computacional, exigência quanto à quantidade ou completude dos dados e quanto à qualidade das recomendações apresentadas aos usuários. Em uma aplicação real, é usual a combinação de diferentes tipos de sistemas (Segaran, 2016 e Ullman, 2015).
 
 Usuários (aquele que se relaciona com os items), items (os objetos das recomendações), avaliações (as preferências dos usuários em relação aos items) e as próprias recomendações são os "objetos" ou conceitos pertinentes à um sistema de recomendação típico. 
 
-O sistema de recomendação que iremos implementar, apresentado no PCI, é de filtragem colaborativa baseado nos usuários. Algoritmos de filtragem colaborativa costumam procurar um certo número de usuários e, a partir destes, identificar um conjunto menor /C/ com preferências similares às do usuário /x/. Ele vai operar sobre os items bem avaliados do conjunto /C/ e combiná-los para criar uma lista hierárquica de sugestões para o usuário /x/. 
+O sistema de recomendação que iremos implementar, apresentado no PCI, é de *filtragem colaborativa baseado nos usuários*. Algoritmos de filtragem colaborativa costumam procurar um certo número de usuários e, a partir destes, identificar um conjunto menor /C/ com preferências similares às do usuário /x/. Ele vai operar sobre os items bem avaliados do conjunto /C/ e combiná-los para criar uma lista hierárquica de sugestões para o usuário /x/. 
 _
-O primeiro desafio deste tipo de sistema é como representar diferentes usuários e suas preferências. No PCI, a estrutura de dados escolhida foi os /nested dictionaries/, a qual, no Racket, uma escolha natural seriam as /(nested) hash-tables/. Por sua vez, o código de Richard Cook utilizou as /association lists/ (utilizar fonte beautiful racket).
+O primeiro desafio deste tipo de sistema é como representar diferentes usuários e suas preferências. No PCI, a estrutura de dados escolhida foi os /nested dictionaries/, a qual, no Racket, uma escolha natural seriam as /(nested) hash-tables/. Por sua vez, o código de Richard Cook utilizou as /association lists/.
 
-O segundo desafio é determinar como os usuários são similares entre si a partir de suas preferências. A ideia é comparar cada usuário com cada outro usuário, computando uma espécie de ranking ou /score/ de similaridade. Este, por sua vez, pode ser implementado a partir de diversas métricas: distância eucidiana, correlação de Pearson, similaridade jacquartiana, coseno dos ângulos entre os vetores de preferência dos usuários etc. A utilidade deste /score/ de similaridade é que pode ser utilizado em um procedimento para hierarquizar os usuários do conjunto /C/ em relação ao usuário /x/.
+O segundo desafio na implementação é determinar como os usuários são similares entre si a partir de suas preferências. A ideia é comparar cada usuário com cada outro usuário, computando uma espécie de ranking ou /score/ de similaridade. Este, por sua vez, pode ser implementado a partir de diversas métricas: distância eucidiana, correlação de Pearson, similaridade jacquartiana, coseno dos ângulos entre os vetores de preferência dos usuários etc. A utilidade deste /score/ de similaridade é que pode ser utilizado em um procedimento para hierarquizar os usuários do conjunto /C/ em relação ao usuário /x/.
 
-Por fim, o sistema deve garantir uma ou mais recomendações ao usuário /x/.
+Por fim, o sistema deve garantir uma ou mais recomendações ao usuário /x/. A avaliação da qualidade dos sistemas de recomendação é um grande tema em si, existindo discussões sobre em que medida a diversidade, novidade, utilidade etc. das recomendações devem ser modeladas e levadas em consideração para que sejam estabelecidos critérios de qualidade sobre estas recomendações.
 
 
 
@@ -71,6 +71,183 @@ O questionário obteve 23 respostas, cada uma delas avaliando (de '1' a '5') 17 
 
 
 ** As diferentes implementações
+
+
+*** Construindo um sistema de recomendação
+
+
+Dividi o meu código em três módulos: (a) o leitor, (b) avaliador de preferências e hierarquizador e (c) interface com o usuário. 
+
+
+**** O leitor
+
+Para ler arquivos .csv eu utilizei o pacote de Neil Van Dyke, =csv-reading=. Ele fornece funções para a leitura de arquivos .csv e sua transformação em listas. A partir disso, fiz uma função para transformar estes dados em listas associativas:
+
+#+BEGIN_SRC racket
+(require csv-reading)
+
+(define my-beaches "praias.csv")
+
+(define make-csv-to-recommender-reader
+  (make-csv-reader-maker
+   '((separator-chars            #\,)
+     (strip-leading-whitespace?  . #t)
+     (strip-trailing-whitespace? . #t))))
+
+(define (csv-to-assoc-list filename)
+  (define preferences-raw (csv->list (make-csv-to-recommender-reader (open-input-file filename))))
+  (define header-row (list-tail (list-ref preferences-raw 0) 1)) 
+  (for/list ((i (cdr preferences-raw)))
+    (cons (car i)
+          (map cons header-row (cdr i)))))
+
+(define data (csv-to-assoc-list my-beaches))
+#+END_SRC
+
+O leitor é capaz de ler diferentes arquivos .csv, desde que estes estejam na formatação adequada (a primeira linha é o nome das categorias, a primeira coluna é o nome dos usuários e os demais campos são notas de 0 a 5, sendo 0 a "não-avaliação" de um item).
+
+**** Avaliador de preferências e hierarquizador
+
+Este módulo possui os seguintes procedimentos-chave: =avaliação=, que captura as preferências de um usuário ou de um par usuário-item; =similar= que computa a similaridade entre dois usuários (a partir de uma métrica de similaridade); =top-matches= que hierarquiza cada usuário em relação a um usuário específico; =sum-all-scores= que computa os melhores items a serem sugeridos ao usuário final.
+
+Veremos, primeiro, =avaliação= e =similar=:
+
+#+BEGIN_SRC racket
+
+(define (avaliação avaliador [item empty] [dataset data])
+  (if (empty? item)
+      (cdr (assoc avaliador dataset))
+      (cdr (assoc item (cdr (assoc avaliador dataset))))))
+
+(define (similar avaliador1 avaliador2 f-distance)
+  (let* ((items1 (avaliação avaliador1))
+         (items2 (avaliação avaliador2))
+         (items-em-comum (set-intersect (map car items1) (map car items2))))
+    (if (empty? items-em-comum) empty
+        (if (equal? cosine-distance-normalized f-distance)
+            (f-distance avaliador1 avaliador2)
+            (f-distance avaliador1 avaliador2 items-em-comum)))))
+#+END_SRC
+
+=avaliação= recebe três parâmetros: avaliador, item (opcional, padrão é empty) e dataset (padrão é data). Se apenas o parâmetro avaliador for utilizado, ele avaliará um =(cdr (assoc avaliador dataset))=, retornando todas as preferências daquele avaliador. Se o parâmetro item for inserido, ele avaliará um =(cdr (assoc item (cdr (assoc avaliador dataset))))=, retornando as preferências daquele avaliador sobre um item específico. Este procedimento será utilizado por =similar= para poder computar as similaridades.
+
+=similar= recebe dois avaliadores e uma métrica de similaridade (f-distance). Items-em-comum foi inserido para evitar erros quando houver uso de datasets inadequados, que não utilizem 0 para não-avaliações. Dito isso, =similar= avaliará uma f-distance dado dois avaliadores. Esta, por sua vez, é quem efetivamente utilizará =avaliação=.
+
+Esses são os procedimentos possivelmente utilizados por =similar= como f-distance (distância euclidiana, correlação de pearson e distância de cosenos): 
+
+#+BEGIN_SRC racket
+(define (euclidean-distance avaliador1 avaliador2 items-em-comum)
+  (let* ((sum-of-squares
+          (reduce + 
+                   (map (lambda (cm)(expt
+                                    (- (string->number (avaliação avaliador1 cm)) (string->number(avaliação avaliador2 cm))) 2)) items-em-comum)))
+         (distance (/ 1 (add1 sum-of-squares)))) distance))
+
+(define (pearson-correlation avaliador1 avaliador2 items-em-comum)
+  (let* ((n (length items-em-comum))
+         (scores1 (map string->number (map (lambda (x) (avaliação avaliador1 x)) items-em-comum)))
+         (scores2 (map string->number (map (lambda (x) (avaliação avaliador2 x)) items-em-comum)))
+         (soma1 (reduce + scores1))
+         (soma2 (reduce + scores2))
+         (soma1-seq (reduce + (map (lambda (x) (* x x)) scores1)))
+         (soma2-seq (reduce + (map (lambda (x) (* x x)) scores2)))
+         (psum (reduce + (map * scores1 scores2)))
+         (num (- psum (/ (* soma1 soma2) n)))
+         (den (sqrt (* (- soma1-seq (/ (expt soma1 2) n)) (- soma2-seq (/ (expt soma2 2) n))))))
+    (if (zero? den) 0 (/ num den))))
+
+(define (cosine-distance-normalized avaliador1 avaliador2)
+  (define (avg* lst) (/ (apply + (filter-not zero? lst)) (length (filter-not zero? lst))))
+  (let* ((data1 (filter number? (map string->number (flatten (cdr (assoc avaliador1 data))))))
+         (data2 (filter number? (map string->number (flatten (cdr (assoc avaliador2 data))))))
+         (vector-1-norm (map (lambda (x)(- x (avg* data1))) (filter-not zero? data1)))
+         (vector-2-norm (map (lambda (x)(- x (avg* data2))) (filter-not zero? data2))))
+         
+    (/ (apply + (map * vector-1-norm vector-2-norm))
+       (* (sqrt (apply + (map (lambda (x) (expt x 2)) vector-1-norm)))
+          (sqrt (apply + (map (lambda (x) (expt x 2)) vector-2-norm))))))
+#+END_SRC
+
+Em geral, o sistema utiliza as métricas de similaridade através de funções /wrappers/:
+
+#+BEGIN_SRC racket
+(define (sim-pearson avaliador1 avaliador2)
+  (similar avaliador1 avaliador2 pearson-correlation))
+         
+(define (sim-distance avaliador1 avaliador2)
+  (similar avaliador1 avaliador2 euclidean-distance))
+
+(define (sim-cosine avaliador1 avaliador2)
+  (similar avaliador1 avaliador2 cosine-distance-normalized))
+#+END_SRC
+
+O procedimento =top-matches= vai utilizar as funções anteriores e computar uma lista de similaridade dos avaliadores em relação ao usuário final:
+
+#+BEGIN_SRC racket
+(define (top-matches userx [n 25] [similarity sim-pearson] [dataset data])
+  (let* ((scores (map (lambda (x) (cons (similarity userx x) x))
+                      (filter-not (lambda (x) (equal? x userx)) (map car dataset))))
+         (scores-organizados (sort scores > #:key car))
+         (len (length scores-organizados)))
+
+    (define (butlast-matches lst [n 1])
+      (if (< (length lst) n) empty (take lst (- len n))))
+      
+    (if (<= len n) scores-organizados (butlast-matches scores-organizados))))
+#+END_SRC
+
+Perceba que =butlast-matches= só é utilizado quando o parâmetro /n/ for relevante. Ele serve para limitar quantos avaliadores similares devem ser utilizados pelo sistema. Como queria testar a robustez do sistema (lembrando que o sistema original utilizava um dataset de 5 avaliadores), preferi deixar o padrão acima da quantidade de avaliadores dos nossos dados (23).
+
+O funcionamento de =top-matches= não é complicado: ela constrói uma lista de similaridade em relação ao usuário final e organiza-os por ordem decrescente.
+
+Ao final do código, decidi que seria muito prático utilizar algumas construções próprias de hash-tables:
+
+#+BEGIN_SRC racket
+(define keys (remove "userx" (map car data)))
+(define vals (map cdr data))
+(define items (map car (cdr (car data))))
+#+END_SRC 
+
+E as utilizei nas funções =sum-all-scores= e =get-recommendations=. =sum-all-scores= irá computar uma lista de melhores items a serem sugeridos ao usuário final. Uma particularidade do seu funcionamento é que ela vai somar todas as notas sobre cada item (multiplicando, anteriormente, cada nota pelo valor de similaridade entre o avaliador e o usuário final) e divide este total pelo somatório das similaridades em relação ao usuário final de todos os usuários que avaliaram aquele item específico. Isto é muito importante para evitar que items mais conhecidos e, portanto, frequentemente avaliados, tenham uma vantagem desproporcional a items menos frequentemente avaliados (e que embora possam ser muito bem avaliados, apenas desconhecidos):
+
+#+BEGIN_SRC racket
+(define (sum-all-scores [dataset data])
+  (define lista-valores empty)
+  (define (reverse-dict dictionary) (map (lambda (x) (cons (cdr x) (car x))) dictionary))
+  
+  (for/list ((f items))
+    (define lista-acumuladora  empty)
+    (for/list ((i keys))
+      (define similaridade-para-userx (dict-ref (reverse-dict (top-matches "userx")) i))                   
+      (set! lista-acumuladora (cons lista-acumuladora (* similaridade-para-userx (string->number (dict-ref (dict-ref data i) f))))))
+    (set! lista-valores (append lista-valores (list (cons f (apply + (flatten lista-acumuladora))))))) lista-valores)
+#+END_SRC
+
+**** Interface com o usuário
+
+#+BEGIN_SRC racket
+(define (get-recommendations userxprefs [similarity sim-pearson])
+  (set! data (append data (list (append '("userx") userxprefs))))
+  
+  (define (sort-dicts dict) (sort dict (lambda (x y) (> (cdr x) (cdr y)))))
+ 
+  (define (recomendação-única recommendations) (define recomendação-final (make-hash (sum-all-scores)))
+    
+    (for/list ((i (map car (dict-ref data "userx"))))
+      (dict-remove! recomendação-final i))
+    
+  (format "Olá! Aproveite as férias e conheça (a praia d@) ~a"(caar (sort-dicts (hash->list recomendação-final)))))
+  (recomendação-única (sum-all-scores)))
+#+END_SRC
+
+
+
+
+
+
+
+
+Abaixo, segue o código completo de cada implementação.
 
 *** Código do Programming Collective Intelligence
 
@@ -484,9 +661,10 @@ recomendações que o usuário x já conhece e apresenta a melhor recomendação
 * Instruções para uso
 
 1. Clone o repositório em sua máquina
-2. Certifique-se que o /path/ da variável =my-beaches= está de acordo com a localização do arquivo praias.csv em sua máquina
-3. Use a função =get-recommendations= no REPL do seguinte modo: =(get-recommendations praias-waldo)=
-4. A variável praias-waldo pode ser substituída por qualquer lista associativa com as preferências do usuário,
+2. Instale o pacote csv-reading em seu DrRacket!
+3. Certifique-se que o /path/ da variável =my-beaches= está de acordo com a localização do arquivo praias.csv em sua máquina
+4. Use a função =get-recommendations= no REPL do seguinte modo: =(get-recommendations praias-waldo)=
+5. A variável praias-waldo pode ser substituída por qualquer lista associativa com as preferências do usuário,
 
 
 
