@@ -21,13 +21,13 @@
 * Introdução
 
 
-/Programming Collective Intelligence: Building Smart Web 2.0 Applications/ de Toby Segaran é um nome feliz. Conjura, de modo preciso, os motivos que levam esta introdução ao aprendizado de máquinas a ser tão empolgante: obter conhecimentos novos a partir de fatos compartilhados por um coletivo. 
+/Programming Collective Intelligence: Building Smart Web 2.0 Applications/ de Toby Segaran é um nome feliz. Conjura, de modo preciso, a pergunta que leva esta introdução ao aprendizado de máquinas a ser tão empolgante: Como obter conhecimentos novos a partir de fatos compartilhados por uma coletividade? 
 
-O que é tão cativante nisto? É que todos os dados são, de certa forma, de pleno conhecimento de todos. Afinal, qualquer um pode, hoje em dia, saber quais páginas seus amigos curtem no Facebook; qualquer site pode conhecer o que seus usuários compram ou acessam. São informações que são ricas e, ao mesmo tempo, inúteis. São inúteis sozinhas, sem serem coletadas e analisadas, mas com o devido tratamento, essas informações batidas podem dar a luz à novos conhecimentos sobre o comportamente, as preferências e as opiniões de vasta quantidade de pessoas.
+O que é tão cativante nisto? É que todos os dados são, de certa forma, de pleno conhecimento de todos. Afinal, qualquer um pode, hoje em dia, saber quais páginas seus amigos curtem no Facebook ou qualquer site pode conhecer o que seus usuários compram ou acessam. São informações que, por si, são ricas e, ao mesmo tempo, inúteis. São inúteis sozinhas, sem serem coletadas e analisadas, mas com o devido tratamento, essas informações "batidas" podem dar a luz à novos conhecimentos sobre o comportamente, as preferências e as opiniões de vasta quantidade de pessoas.
 
 Este trabalho é uma tentativa de implementar em Racket um sistema de recomendação, originalmente implementado em Python no segundo capítulo do /Programming Collective Intelligence/ (PCI). Ele foi tornado possível a partir do trabalho de muitos: lectures do curso Mining Massive Datasets dos professores Rajaraman e Ullman, de Stanford, a implementação parcial do PCI do blog /I Need Closures/ de Richard Cook, um paper sobre sistemas de recomendação e, literalmente, centenas de perguntas e respostas no StackOverflow, Reddit e Quora.
 
-O trabalho é estruturado da seguinte forma: (I) explicar os objetivos que pretendo alcançar no desenvolvimento deste código; (II) apresentar os dados empíricos que foram coletados para desafiar a robustez do código que, em sua implementação original, trabalha com dados hipotéticos e limitados; e (III) apresentar o código, explicando seu funcionamento e comentando algumas escolhas de seu design.
+O trabalho é estruturado da seguinte forma: (I) explicar os objetivos que pretendo alcançar no desenvolvimento deste código; (II) apresentar os dados empíricos que foram coletados para desafiar a robustez do código que, em sua implementação original, trabalha com dados hipotéticos e limitados; (III) apresentar o código, explicando seu funcionamento e comentando algumas escolhas de seu design.
 
 
 * Objetivos
@@ -36,7 +36,7 @@ O código teve três critérios em seu desenvolvimento:
 
 1. Buscar robustez. No PCI e no código de Richard Cook, o sistema de recomedação toma como input um conjunto de preferências limitado no próprio código (através de um dicionário, no PCI, e de uma lista associativa, em Cook). Considerei que isto era insuficiente, e optei por tentar melhorar o programa ao permitir que ele lidasse com diferentes datasets e, preferencialmente, com dados empíricos;
 
-2. Beleza. Acredito que a beleza de um código é uma boa medida, embora não única e, talvez, a mais importante, de sua qualidade. Busquei programar neste sentido, ao evitar o uso de estados, funções e estruturas de dados que não fossem estritamente necessárias para o sistema de recomendações (exceto quando importantes para sua escalabilidade), escrever um código legível tanto em seus comentários quanto na escolha dos nomes e quantidades de parâmetros e procedimentos, seguir o recomendado pelas práticas de estilo em Racket, entre outras abordagens. No entanto, entendo que a beleza é o que mais falta a este trabalho, em uma autocrítica, fruto da óbvia inexperiência e da limitacão de tempo.
+2. Beleza. Acredito que a beleza de um código é uma boa medida, embora não única e, talvez, a mais importante, de sua qualidade. Busquei programar neste sentido, ao evitar o uso de estados, funções e estruturas de dados que não fossem estritamente necessárias para o sistema de recomendações (exceto quando importantes para sua escalabilidade), escrever um código legível tanto em seus comentários quanto na escolha dos nomes e quantidades de parâmetros e procedimentos, seguir o recomendado pelas práticas de estilo em Racket, entre outras abordagens. No entanto, entendo que a beleza é o que mais falta a este trabalho, em uma autocrítica, fruto de minha inexperiência.
 
 3. Modularização e abstração. Busquei trazer os ensinamentos dos capítulos 2 e 3 do /Structure and Interpretation of Computer Programs/ ao código. Um programa modular e com uso de abstrações é mais escalável e mais elegante.
 
@@ -105,6 +105,8 @@ Para ler arquivos .csv eu utilizei o pacote de Neil Van Dyke, =csv-reading=. Ele
 #+END_SRC
 
 O leitor é capaz de ler diferentes arquivos .csv, desde que estes estejam na formatação adequada (a primeira linha é o nome das categorias, a primeira coluna é o nome dos usuários e os demais campos são notas de 0 a 5, sendo 0 a "não-avaliação" de um item).
+
+A lista associativa me pareceu uma estrutura de dados interessante por permitir que eu opere com ela enquanto lista e enquanto hash-table.
 
 **** Avaliador de preferências e hierarquizador
 
@@ -225,6 +227,9 @@ E as utilizei nas funções =sum-all-scores= e =get-recommendations=. =sum-all-s
 
 **** Interface com o usuário
 
+
+A ideia é que o usuário apenas tenha que interagir com uma função, =get-recommendations=. Ela é responsável por duas funções do sistema: (a) inserir as preferências do usuário final e (b) receber uma única recomendação útil para este usuário.
+
 #+BEGIN_SRC racket
 (define (get-recommendations userxprefs [similarity sim-pearson])
   (set! data (append data (list (append '("userx") userxprefs))))
@@ -239,9 +244,6 @@ E as utilizei nas funções =sum-all-scores= e =get-recommendations=. =sum-all-s
   (format "Olá! Aproveite as férias e conheça (a praia d@) ~a"(caar (sort-dicts (hash->list recomendação-final)))))
   (recomendação-única (sum-all-scores)))
 #+END_SRC
-
-
-
 
 
 
@@ -435,23 +437,6 @@ Note-se que o código está incompleto em relação ao PCI. Assim como este, o d
 #+END_SRC
 
 *** O meu sistema de recomendação
-
-
-
-
-Ponderei algumas opções de estrutura de dados: hash-table, vectors, structs e listas associativas. A última me pareceu a melhor opção, pois traz uma flexibilidade interessante, ao permitir que seja manipulada como listas ou como dicionários. 
-
-
-
-#+CAPTION: Exemplo de listas associativas do Beautiful Racket
-#+NAME: fig:fig1
-[[./assoc_lists.png]]
-
-
-
-
-
-
 
 
 #+BEGIN_SRC racket
@@ -658,15 +643,22 @@ recomendações que o usuário x já conhece e apresenta a melhor recomendação
 
 
 
+* Melhorias e desenvolvimentos possíveis
+
+1. Separar, na interface, os procedimentos de inserir novas preferências (do usuário final) e o de obtenção das recomendações em si.
+2. Adicionar mais métricas de similaridade. É uma melhoria simples, porque o sistema já é apto a trabalhar com diferentes métricas de similaridade possíveis.
+3. Otimizar a eficiência computacional dos procedimentos.
+4. Criar error handlers para, por exemplo, garantir que o dataset utilizado é adequado ou que as preferências do usuário final foram inseridas de modo adequado.
+5. Criar padrões de qualidade da recomendação sugerida pelo sistema, para facilitar o desenvolvimento do próprio sistema.
+
 * Instruções para uso
 
 1. Clone o repositório em sua máquina
 2. Instale o pacote csv-reading em seu DrRacket!
+3. Abra o arquivo recommender-system-lp.rkt no DrRacket
 3. Certifique-se que o /path/ da variável =my-beaches= está de acordo com a localização do arquivo praias.csv em sua máquina
 4. Use a função =get-recommendations= no REPL do seguinte modo: =(get-recommendations praias-waldo)=
-5. A variável praias-waldo pode ser substituída por qualquer lista associativa com as preferências do usuário,
-
-
+5. A variável praias-waldo pode ser substituída por qualquer lista associativa com as preferências do usuário.
 
 
 * Fontes principais
